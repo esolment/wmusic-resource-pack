@@ -26,7 +26,7 @@ Arguments:
 
 Options:
   --slots-file=FILE   Path to the slot-list file.
-                      Default: wmusic_slots.txt next to this script.
+                      Default: slots.txt next to this script.
                       Ignored when --auto is used.
 
   --auto              Auto-discover slot names from a Minecraft assets index
@@ -54,7 +54,7 @@ Options:
 
   -h, --help          Show this help and exit.
 
-Slot-list file format (wmusic_slots.txt):
+Slot-list file format (slots.txt):
   One OGG path per line, optionally quoted. Paths must contain
   minecraft/sounds/music/game/ — everything up to and including "game/"
   is stripped to derive the subdirectory and slot name. Example:
