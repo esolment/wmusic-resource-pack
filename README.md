@@ -22,7 +22,7 @@ cd wmusic-resource-pack
 Point the script at a folder containing your `.mp3` files and add `--auto` so it discovers all music slots directly from your Minecraft installation:
 
 ```bash
-bash wmusic_pack.sh --auto ~/Music/my-tracks/
+bash pack_music.sh --auto ~/Music/my-tracks/
 ```
 
 This will:
@@ -45,7 +45,7 @@ This will:
 ### Usage
 
 ```
-bash wmusic_pack.sh [OPTIONS] <input_dir> [output_dir]
+bash pack_music.sh [OPTIONS] <input_dir> [output_dir]
 ```
 
 | Argument | Description |
@@ -66,7 +66,7 @@ Running the script with no arguments prints this reference.
 Auto-discover all music slot names from your Minecraft assets index instead of reading `slots.txt`. The script finds the highest-numbered `.json` file in `~/.minecraft/assets/indexes/` and extracts every path under `minecraft/sounds/music/game/` from it.
 
 ```bash
-bash wmusic_pack.sh --auto ~/Music/my-tracks/
+bash pack_music.sh --auto ~/Music/my-tracks/
 ```
 
 Use this when you want to stay in sync with whatever version of Minecraft you currently have installed. The slots file is ignored when `--auto` is active.
@@ -78,7 +78,7 @@ Use this when you want to stay in sync with whatever version of Minecraft you cu
 Path to a custom slots file. Defaults to `slots.txt` in the same directory as the script. Ignored when `--auto` is used.
 
 ```bash
-bash wmusic_pack.sh --slots-file=~/my-slots.txt ~/Music/my-tracks/
+bash pack_music.sh --slots-file=~/my-slots.txt ~/Music/my-tracks/
 ```
 
 **Slots file format** — one OGG path per line, quotes optional, comments with `#`:
@@ -101,13 +101,13 @@ Patch the `pack_format` field in `./wmusic_pack/pack.mcmeta` to match your targe
 Use `--pack-format` for a single value (older format):
 
 ```bash
-bash wmusic_pack.sh --auto --pack-format=34 ~/Music/my-tracks/
+bash pack_music.sh --auto --pack-format=34 ~/Music/my-tracks/
 ```
 
 Use `--min-format` and `--max-format` for a version range (1.20.2+):
 
 ```bash
-bash wmusic_pack.sh --auto --min-format=75 --max-format=75 ~/Music/my-tracks/
+bash pack_music.sh --auto --min-format=75 --max-format=75 ~/Music/my-tracks/
 ```
 
 Result in `pack.mcmeta`:

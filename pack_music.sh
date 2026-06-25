@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_SLOTS_FILE="$SCRIPT_DIR/slots.txt"
+DEFAULT_SLOTS_FILE="$SCRIPT_DIR/wmusic_slots.txt"
 DEFAULT_OUTPUT_AUDIO_DIR="./wmusic_pack/assets/minecraft/sounds/music/game"
 DEFAULT_OUTPUT_DIR="./"
 PACK_ROOT="./wmusic_pack"
@@ -26,13 +26,24 @@ Arguments:
 
 Options:
   --slots-file=FILE   Path to the slot-list file.
-                      Default: slots.txt next to this script.
+                      Default: wmusic_slots.txt next to this script.
                       Ignored when --auto is used.
 
-  --auto              Auto-discover slot names from the Minecraft assets index
+  --auto              Auto-discover slot names from a Minecraft assets index
                       instead of reading a slots file. Finds the largest
-                      numeric index in ~/.minecraft/assets/indexes/ and greps
+                      numeric .json in ~/.minecraft/assets/indexes/ and greps
                       it for music paths under minecraft/sounds/music/game/.
+                      Combine with --indexes-file= to use a specific index.
+
+  --indexes-file=X    Index file to use with --auto. Two forms are accepted:
+                        - A bare name (with or without .json extension):
+                            --indexes-file=30
+                            --indexes-file=30.json
+                          Looks for that file in ~/.minecraft/assets/indexes/.
+                        - A full or relative path:
+                            --indexes-file=/path/to/my.json
+                          Uses the file directly.
+                      Ignored when --auto is not set.
 
   --pack-format=N     Set pack_format in pack.mcmeta (mutually exclusive
                       with --min-format / --max-format).
@@ -43,7 +54,7 @@ Options:
 
   -h, --help          Show this help and exit.
 
-Slot-list file format (slots.txt):
+Slot-list file format (wmusic_slots.txt):
   One OGG path per line, optionally quoted. Paths must contain
   minecraft/sounds/music/game/ — everything up to and including "game/"
   is stripped to derive the subdirectory and slot name. Example:
@@ -66,6 +77,7 @@ MIN_FORMAT=""
 MAX_FORMAT=""
 INPUT_DIR=""
 OUTPUT_DIR=""
+INDEXES_FILE=""
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
 
@@ -86,6 +98,9 @@ for arg in "$@"; do
       ;;
     --slots-file=*)
       SLOTS_FILE="${arg#*=}"
+      ;;
+    --indexes-file=*)
+      INDEXES_FILE="${arg#*=}"
       ;;
     --pack-format=*)
       PACK_FORMAT="${arg#*=}"
@@ -167,24 +182,46 @@ if [ "$AUTO" -eq 1 ]; then
   echo "Auto-discovering slot names from Minecraft assets..."
 
   INDEXES_DIR="$HOME/.minecraft/assets/indexes"
-  if [ ! -d "$INDEXES_DIR" ]; then
-    echo "Error: Minecraft assets index directory not found: $INDEXES_DIR"
-    exit 1
+
+  if [ -n "$INDEXES_FILE" ]; then
+    # If it looks like a path (contains a slash), use it directly.
+    # Otherwise treat it as a bare name inside the default indexes directory.
+    if [[ "$INDEXES_FILE" == */* ]]; then
+      INDEX_FILE="$INDEXES_FILE"
+    else
+      # Strip .json suffix if provided, then add it back for consistency
+      INDEX_NAME="${INDEXES_FILE%.json}"
+      INDEX_FILE="$INDEXES_DIR/${INDEX_NAME}.json"
+    fi
+    if [ ! -f "$INDEX_FILE" ]; then
+      echo "Error: Index file not found: $INDEX_FILE"
+      exit 1
+    fi
+    echo "Using index: $INDEX_FILE (manually specified)"
+  else
+    if [ ! -d "$INDEXES_DIR" ]; then
+      echo "Error: Minecraft assets index directory not found: $INDEXES_DIR"
+      exit 1
+    fi
+
+    # Find the index file with the largest numeric stem.
+    # The stem number is the assets index version and increases with each
+    # Minecraft release — so the largest one matches the newest installed version.
+    LATEST_INDEX=$(ls "$INDEXES_DIR"/*.json 2>/dev/null \
+      | sed 's|.*/||; s|\.json$||' \
+      | grep -E '^[0-9]+$' \
+      | sort -n \
+      | tail -1)
+
+    if [ -z "$LATEST_INDEX" ]; then
+      echo "Error: No numeric .json index files found in $INDEXES_DIR"
+      echo "Use --indexes-file= to point to an index file manually."
+      exit 1
+    fi
+
+    INDEX_FILE="$INDEXES_DIR/${LATEST_INDEX}.json"
+    echo "Using index: $INDEX_FILE"
   fi
-
-  LATEST_INDEX=$(ls "$INDEXES_DIR"/*.json 2>/dev/null \
-    | sed 's|.*/||; s|\.json$||' \
-    | grep -E '^[0-9]+$' \
-    | sort -n \
-    | tail -1)
-
-  if [ -z "$LATEST_INDEX" ]; then
-    echo "Error: No numeric .json index files found in $INDEXES_DIR"
-    exit 1
-  fi
-
-  INDEX_FILE="$INDEXES_DIR/${LATEST_INDEX}.json"
-  echo "Using index: $INDEX_FILE"
 
   mapfile -t RAW_PATHS < <(
     grep -o '"minecraft/sounds/music/[^"]*"' "$INDEX_FILE" | sort -u
