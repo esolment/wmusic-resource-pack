@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_SLOTS_FILE="$SCRIPT_DIR/wmusic_slots.txt"
+DEFAULT_SLOTS_FILE="$SCRIPT_DIR/slots.txt"
 DEFAULT_OUTPUT_AUDIO_DIR="./wmusic_pack/assets/minecraft/sounds/music/game"
 DEFAULT_OUTPUT_DIR="./"
 PACK_ROOT="./wmusic_pack"
